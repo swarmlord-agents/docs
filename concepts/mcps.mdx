@@ -1,0 +1,56 @@
+---
+title: MCPs & tools
+description: "How agents access external tools."
+---
+
+Every agent automatically has two web tools:
+
+| Tool        | What it does |
+| ----------- | ------------ |
+| `websearch` | Search the open web. Returns ranked URLs + snippets. |
+| `webfetch`  | Fetch and clean the contents of URLs. |
+
+For everything else, agents opt in to **MCPs** — [Model Context Protocol](https://modelcontextprotocol.io) servers that expose tools like "send iMessage," "list GitHub PRs," "post to Slack."
+
+## Use an MCP
+
+Add it to the bundle and grant any secrets it needs:
+
+```jsonc
+{
+  "name": "research-agent",
+  "mcps": ["sendblue", "github"],
+  "secretGrants": [
+    "SENDBLUE_API_KEY_ID",
+    "SENDBLUE_API_SECRET_KEY",
+    "GITHUB_TOKEN"
+  ]
+}
+```
+
+## Built-in registry
+
+| id            | What it does                          | Required secrets |
+| ------------- | ------------------------------------- | ---------------- |
+| `sendblue`    | Send iMessage / SMS                   | `SENDBLUE_API_KEY_ID`, `SENDBLUE_API_SECRET_KEY` |
+| `github`      | Read repos, PRs, issues               | `GITHUB_TOKEN`   |
+| `slack`       | Post and read Slack messages          | `SLACK_BOT_TOKEN` |
+| `playwright`  | Headless browser automation           | — |
+| `fetch`       | Generic HTTP fetch                    | — |
+| `filesystem`  | Workspace file IO                     | — |
+
+```bash
+swarmlord mcp list --available
+```
+
+## Secrets
+
+```bash
+swarmlord secret set SENDBLUE_API_KEY_ID
+```
+
+Set once per user. Encrypted at rest. Only surfaced inside the MCP, never in events or logs. Grant explicit access via `secretGrants` in the bundle.
+
+## Cost
+
+Every model call and tool call is recorded in USD. View on the dashboard.

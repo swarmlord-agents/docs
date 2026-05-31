@@ -1,0 +1,103 @@
+---
+title: Agents
+description: "An agent is a deployed swarmlord.jsonc bundle."
+---
+
+The bundle declares what the agent is and what it can do. Deploy it and you get a callable resource.
+
+```jsonc swarmlord.jsonc
+{
+  "name": "morning-briefing",
+  "model": {
+    "providerId": "openrouter",
+    "modelId": "~anthropic/claude-haiku-latest"
+  },
+  "instructions": "You are a concise morning-briefing assistant.",
+  "mcps": ["sendblue"],
+  "secretGrants": ["SENDBLUE_API_KEY_ID", "SENDBLUE_API_SECRET_KEY"],
+  "triggers": [{ "kind": "cron", "expression": "0 9 * * 1-5" }],
+  "command": {
+    "status": { "template": "Summarize today's status in 3 bullets." }
+  }
+}
+```
+
+## Fields
+
+| Field           | Purpose |
+| --------------- | ------- |
+| `name`          | Stable handle. URLs and `swarmlord run <name>` reference this. |
+| `model`         | `providerId` + `modelId`. See [Models](#models) below. |
+| `instructions`  | System prompt. |
+| `mcps`          | Built-in MCP ids — see [MCPs](/concepts/mcps). |
+| `secretGrants`  | Secret keys the agent is allowed to read. |
+| `triggers`      | Cron and webhook triggers that self-fire the agent. |
+| `command`       | Custom CLI subcommands. |
+| `customTools`   | JSON-Schema tool blocks the model can call. |
+
+JSONC comments and `$schema` URLs are supported. The full schema is published at [`https://api.swarmlord.ai/schema/swarmlord.json`](https://api.swarmlord.ai/schema/swarmlord.json).
+
+## Models
+
+Models are routed through [OpenRouter](https://openrouter.ai), so any model listed at [openrouter.ai/models](https://openrouter.ai/models) is supported. Just paste the OpenRouter id into `modelId`:
+
+```jsonc
+{
+  "providerId": "openrouter",
+  // swap modelId for any id from openrouter.ai/models:
+  "modelId": "anthropic/claude-opus-4.8"
+  // "modelId": "openai/gpt-5.5"
+  // "modelId": "google/gemini-3.5-flash"
+  // "modelId": "x-ai/grok-4.3"
+}
+```
+
+Use a `~vendor/model-latest` alias to always run on the latest revision — e.g. `~anthropic/claude-sonnet-latest` or `~openai/gpt-mini-latest`.
+
+Override per-call with `session.send(..., { modelId })` to try a different model mid-conversation. Billing tracks the actual model used, in USD.
+
+## Deploying
+
+```bash
+swarmlord deploy
+```
+
+Re-running upserts: same `name` → same agent id, new revision.
+
+## Calling
+
+Every invocation creates a fresh [session](/concepts/sessions).
+
+```ts
+const session = await client.agent("morning-briefing").createSession();
+```
+
+## Triggers
+
+An agent can fire itself.
+
+```jsonc
+"triggers": [
+  { "kind": "cron",    "expression": "0 9 * * 1-5" },
+  { "kind": "webhook", "suffix": "github" }
+]
+```
+
+**Cron** — standard 5-field expressions plus `@hourly`, `@daily`, `@weekly`. Resolution is one minute.
+
+**Webhook** — the platform mints `POST /trigger/<userId>/<agentId>/<suffix>`. POST anything to that URL (from GitHub, Stripe, Slack — anything) and the agent runs with the request body as input.
+
+## Custom CLI commands
+
+```jsonc
+"command": {
+  "greet": { "template": "Say hello to ${1} in one sentence." }
+}
+```
+
+```bash
+$ swarmlord greet Zach
+Hello Zach! Hope you're having a fantastic day.
+```
+
+Templates support `${1}`, `${2}`, and named flags. The CLI dispatches the resolved prompt against the agent.

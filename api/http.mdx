@@ -1,0 +1,147 @@
+---
+title: HTTP API
+description: "The wire protocol behind the SDK and CLI."
+---
+
+<Card title="Live OpenAPI" icon="file-code" href="https://api.swarmlord.ai/openapi.json">
+The canonical, always-current schema.
+</Card>
+
+Every endpoint is at `https://api.swarmlord.ai` and requires a bearer token:
+
+```
+Authorization: Bearer slsk_...
+```
+
+Mint tokens with `swarmlord login` (CLI) or the dashboard.
+
+## Deploy a bundle
+
+```http
+POST /deploy
+Content-Type: application/jsonc
+
+{ "name": "hello-agent", "model": {...}, "instructions": "..." }
+```
+
+Returns `{ ok: true, agentId, warnings }` or `{ ok: false, errors }`.
+
+## Create a session
+
+```http
+POST /agent/<name>/session
+Content-Type: application/json
+
+{}
+```
+
+Returns `{ id }`.
+
+## Send a message (streaming)
+
+```http
+POST /session/<id>
+Content-Type: application/json
+Accept: text/event-stream
+
+{ "parts": [{ "type": "text", "text": "Hi" }] }
+```
+
+Response is an SSE stream of [events](/api/events) for this turn.
+
+## Send a message (async)
+
+```http
+POST /session/<id>?async=1
+
+{ "parts": [{ "type": "text", "text": "Long task..." }] }
+```
+
+Returns `202 { messageId }` immediately. Events are persisted to the session for later replay.
+
+## Subscribe / replay
+
+```http
+GET /session/<id>/events
+Accept: text/event-stream
+Last-Event-ID: 5
+```
+
+Replays events with `seq > 5`, then streams new ones.
+
+## Fork
+
+```http
+POST /session/<id>/fork
+```
+
+Snapshots state into a new session id. Returns `{ id }`.
+
+## Abort
+
+```http
+POST /session/<id>/abort
+```
+
+Cancels the in-flight model call.
+
+## Revert / regenerate
+
+```http
+POST /session/<id>/revert      { "messageId": "..." }
+POST /session/<id>/regenerate  { "assistantMessageId": "..." }
+```
+
+## Keys
+
+```http
+GET    /key
+POST   /key
+DELETE /key/<id>
+```
+
+## Secrets
+
+```http
+GET    /secret              # keys only, never values
+PUT    /secret/<key>        { "value": "..." }
+DELETE /secret/<key>
+```
+
+## Webhooks
+
+```http
+POST /webhook
+{ "url": "https://example.com/hook", "events": ["session.completed"] }
+```
+
+Each delivery includes `x-swarmlord-signature: <hmac-sha256>` and `x-swarmlord-timestamp` headers. Verify with `verifyWebhook()` from `swarmlord/webhooks`.
+
+## Triggers
+
+Webhook-triggered agents are reachable at:
+
+```http
+POST /trigger/<userId>/<agentId>/<suffix>
+```
+
+The request body becomes the initial user message. No auth header — the URL is the secret.
+
+## Errors
+
+| Status | Meaning |
+| ------ | ------- |
+| 400    | Validation error. |
+| 401    | Missing or invalid token. |
+| 403    | Token valid but lacks access. |
+| 404    | Agent or session not found. |
+| 429    | Rate-limited. Retry after `Retry-After`. |
+| 5xx    | Server error. Response body holds a trace id. |
+
+## Health
+
+```http
+GET /auth/health
+```
+
+Returns `200 { "ok": true }` if the platform is reachable.

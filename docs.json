@@ -1,0 +1,54 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "mint",
+  "name": "swarmlord",
+  "description": "Deploy long-running AI agents. One config file, full SDK + CLI.",
+  "colors": {
+    "primary": "#ff5d73",
+    "light": "#ff8aa0",
+    "dark": "#e63e5c"
+  },
+  "logo": {
+    "light": "/logo/light.svg",
+    "dark": "/logo/dark.svg",
+    "href": "https://swarmlord.ai"
+  },
+  "favicon": "/favicon.svg",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get started",
+            "pages": ["introduction", "quickstart"]
+          },
+          {
+            "group": "Concepts",
+            "pages": ["concepts/agents", "concepts/sessions", "concepts/mcps"]
+          },
+          {
+            "group": "Guides",
+            "pages": ["guides/cli", "guides/sdk", "guides/sendblue-research-agent"]
+          }
+        ]
+      },
+      {
+        "tab": "Reference",
+        "groups": [
+          {
+            "group": "API",
+            "pages": ["api/http", "api/events"]
+          }
+        ]
+      }
+    ]
+  },
+  "navbar": {
+    "primary": {
+      "type": "button",
+      "label": "Dashboard",
+      "href": "https://swarmlord.ai"
+    }
+  }
+}

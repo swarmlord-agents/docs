@@ -1,0 +1,98 @@
+---
+title: CLI
+description: "Every swarmlord command."
+---
+
+```bash
+npm install -g swarmlord
+swarmlord help
+```
+
+## Auth
+
+```bash
+swarmlord login                   # browser flow → writes ~/.config/swarmlord/credentials
+swarmlord key list
+swarmlord key create
+swarmlord key revoke <id>
+```
+
+## Agent lifecycle
+
+```bash
+swarmlord init <name>             # scaffold a swarmlord.jsonc
+swarmlord deploy                  # validate and deploy
+```
+
+## Running
+
+```bash
+swarmlord run [agent] [-m <message>] [--no-stream] [--json]
+
+swarmlord run -m "Hello"          # uses the swarmlord.jsonc in cwd
+swarmlord run my-agent -m "Hi"    # explicit agent
+swarmlord run my-agent --no-stream -m "Reply pong"
+echo "Hello" | swarmlord run my-agent
+```
+
+| Flag             | Effect |
+| ---------------- | ------ |
+| `-m`/`--message` | The prompt. Also accepts stdin or positional. |
+| `--no-stream`    | Wait for the terminal event, print only the final reply. |
+| `--json`         | Emit raw `AgentEvent` JSON lines. |
+
+`Ctrl-C` aborts the session.
+
+## Logs
+
+```bash
+swarmlord logs <session-id>
+swarmlord logs <session-id> -f          # follow live
+swarmlord logs <session-id> --json
+```
+
+## MCPs
+
+```bash
+swarmlord mcp list                       # installed for your user
+swarmlord mcp list --available           # the full registry
+swarmlord mcp install sendblue
+swarmlord mcp show sendblue              # required secrets, schema
+```
+
+## Secrets
+
+```bash
+swarmlord secret set SENDBLUE_API_KEY_ID
+```
+
+Prompts for the value, stores it encrypted. Grant access in the bundle via `secretGrants`.
+
+## Webhooks
+
+```bash
+swarmlord webhook add https://example.com/hook --events session.completed
+```
+
+Subscribes your URL to the chosen events. Each delivery is HMAC-signed.
+
+## Dynamic commands
+
+Anything under `command:` in `swarmlord.jsonc` becomes a subcommand:
+
+```jsonc
+"command": {
+  "greet": { "template": "Say hello to ${1} in one sentence." }
+}
+```
+
+```bash
+$ swarmlord greet Zach
+Hello Zach! Hope you're having a fantastic day.
+```
+
+Templates support `${1}`, `${2}`, and named flags. The CLI dispatches against the agent in the bundle.
+
+## Help
+
+`swarmlord help` or `swarmlord <command> --help` for any subcommand.

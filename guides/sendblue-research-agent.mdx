@@ -1,0 +1,86 @@
+---
+title: Daily research agent
+description: "Build an agent that researches a topic each morning and texts you the summary."
+---
+
+The canonical end-to-end agent: every weekday at 8am, it searches the web on a topic, summarizes the findings, and sends them to your phone via iMessage.
+
+No client code. No server code. One config file.
+
+## Prerequisites
+
+1. A [swarmlord](https://swarmlord.ai) account.
+2. A [Sendblue](https://sendblue.co) account with an API key.
+3. Your iMessage-capable phone number.
+
+## 1. Set the secrets
+
+```bash
+swarmlord secret set SENDBLUE_API_KEY_ID
+swarmlord secret set SENDBLUE_API_SECRET_KEY
+```
+
+## 2. Scaffold
+
+```bash
+swarmlord init research-agent
+cd research-agent
+```
+
+## 3. The bundle
+
+Replace `swarmlord.jsonc`:
+
+```jsonc swarmlord.jsonc
+{
+  "name": "research-agent",
+  "model": { "providerId": "openrouter", "modelId": "anthropic/claude-opus-4.8" },
+
+  "instructions": [
+    "You are a research assistant.",
+    "When invoked, search the web on the user's topic, read the top sources, and",
+    "send a 5-bullet summary to +1XXXXXXXXXX via the sendblue MCP.",
+    "Cite the URL after each bullet. Keep the total reply under 800 characters."
+  ].join("\n"),
+
+  "mcps": ["sendblue"],
+  "secretGrants": ["SENDBLUE_API_KEY_ID", "SENDBLUE_API_SECRET_KEY"],
+
+  "triggers": [
+    { "kind": "cron", "expression": "0 8 * * 1-5" }
+  ],
+
+  "command": {
+    "research": {
+      "template": "Research \"${1}\" and text me a 5-bullet summary with citations."
+    }
+  }
+}
+```
+
+Replace `+1XXXXXXXXXX` with your real phone number.
+
+## 4. Deploy
+
+```bash
+swarmlord deploy
+```
+
+## 5. Try it
+
+```bash
+swarmlord research "the latest in AI agent platforms"
+```
+
+The agent will call `websearch`, `webfetch`, then `send_message` (Sendblue). A text lands on your phone with the summary and links.
+
+## 6. Let cron take over
+
+The cron fires every weekday at 8am UTC. To make the topic dynamic, swap the trigger to a webhook and POST the topic in from your morning routine.
+
+## Variations
+
+- **News digest** — "summarize the top 5 tech stories from the last 24 hours."
+- **Stock watch** — add a `customTools` block for a price lookup, send a daily snapshot.
+- **PR review** — add the `github` MCP, diff yesterday's PRs each morning.
+- **Slack instead** — swap `sendblue` for the `slack` MCP and post to a channel.

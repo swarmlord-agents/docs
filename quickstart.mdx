@@ -1,0 +1,99 @@
+---
+title: Quickstart
+description: "Deploy and run an agent in 5 minutes."
+---
+
+You'll need a swarmlord account. Sign up at [swarmlord.ai](https://swarmlord.ai).
+
+## 1. Install the CLI
+
+```bash
+npm install -g swarmlord
+# or: bun add -g swarmlord
+```
+
+## 2. Log in
+
+```bash
+swarmlord login
+```
+
+Opens the dashboard, mints an API key, writes it to `~/.config/swarmlord/credentials`.
+
+## 3. Create an agent
+
+```bash
+swarmlord init hello-agent
+cd hello-agent
+```
+
+The scaffolded `swarmlord.jsonc`:
+
+```jsonc
+{
+  "name": "hello-agent",
+  "model": { "providerId": "openrouter", "modelId": "anthropic/claude-opus-4.8" },
+  "instructions": "You are a helpful agent."
+}
+```
+
+## 4. Deploy
+
+```bash
+swarmlord deploy
+```
+
+```
+✔ Deployed agent 68406838-321f-40b5-88d0-b8ab93c54c1b
+```
+
+## 5. Run it
+
+```bash
+swarmlord run -m "In one sentence, introduce yourself."
+```
+
+```
+→ assistant
+Hi! I'm hello-agent, here to help with whatever you need.
+```
+
+## 6. Call from TypeScript
+
+```bash
+npm install swarmlord
+```
+
+```ts
+import { createClient } from "swarmlord";
+
+const client = createClient({ apiKey: process.env.SWARMLORD_API_KEY! });
+
+const session = await client.agent("hello-agent").createSession();
+const { value } = await session
+  .send({ parts: [{ type: "text", text: "Say hi." }] })
+  .result<string>();
+
+console.log(value);
+```
+
+<Card title="You're done" icon="check">
+A live agent reachable from `curl`, the SDK, the CLI, and the dashboard.
+</Card>
+
+## Next
+
+<CardGroup cols={2}>
+  <Card title="Agents" icon="cube" href="/concepts/agents">
+    Every field in `swarmlord.jsonc`.
+  </Card>
+  <Card title="Sessions" icon="rotate" href="/concepts/sessions">
+    Streaming, multi-turn, fork, abort, resume.
+  </Card>
+  <Card title="MCPs" icon="puzzle-piece" href="/concepts/mcps">
+    Connect Sendblue, GitHub, Slack, and more.
+  </Card>
+  <Card title="Daily research agent" icon="message" href="/guides/sendblue-research-agent">
+    Build an agent that texts you the news.
+  </Card>
+</CardGroup>

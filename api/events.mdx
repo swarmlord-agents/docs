@@ -1,0 +1,70 @@
+---
+title: Events
+description: "The AgentEvent vocabulary."
+---
+
+Every state change on a session is an `AgentEvent`. Events stream over SSE and persist to history.
+
+```ts
+interface BaseEvent {
+  sessionId: string;
+  seq: number;      // monotonic per session, starts at 1
+  ts: number;       // unix milliseconds
+}
+```
+
+## Lifecycle
+
+| Type                | Payload                                          | When |
+| ------------------- | ------------------------------------------------ | ---- |
+| `message.created`   | `{ message }`                                    | A user or assistant message is added. |
+| `part.appended`     | `{ messageId, part }`                            | A new part (text delta, tool call, file). |
+| `part.updated`      | `{ messageId, partId, part }`                    | A tool call transitioned (e.g. `running` → `completed`). |
+| `permission.asked`  | `{ tool, reason, callId }`                       | A tool is waiting for approval. |
+| `json_reply.failed` | `{ attempt, lastError }`                         | Schema-enforced reply failed validation; retrying. |
+
+## Terminal
+
+Every session ends in exactly one terminal event:
+
+| Type                          | Payload                                                              |
+| ----------------------------- | -------------------------------------------------------------------- |
+| `session.completed`           | `{ terminal: { kind: "reply" \| "json_reply", text \| value } }`     |
+| `session.completed_degraded`  | same, plus `degraded: true`                                          |
+| `session.aborted`             | `{ reason?: string }`                                                |
+
+```ts
+type Terminal =
+  | { kind: "reply"; text: string }
+  | { kind: "json_reply"; value: unknown; degraded?: boolean };
+```
+
+## Consuming
+
+```ts
+for await (const ev of session.stream({ parts: [...] })) {
+  if (ev.type === "session.completed") {
+    console.log(ev.terminal);
+    break;
+  }
+}
+```
+
+Or replay/resume:
+
+```ts
+const stream = session.events({ sinceSeq: lastSeen });
+for await (const ev of stream) { ... }
+```
+
+Or fan out via webhook:
+
+```bash
+swarmlord webhook add https://example.com/hook --events session.completed,session.aborted
+```
+
+## Guarantees
+
+- Every session reaches a terminal event. Consumers never hang.
+- `seq` is strictly monotonic per session. Gaps indicate missed events; reconnect with `sinceSeq` to replay.
+- Recent events are kept available for replay — any practical reconnect window is covered. For older history, use `GET /session/<id>/history`.
