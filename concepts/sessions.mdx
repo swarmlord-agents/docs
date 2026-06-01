@@ -5,12 +5,17 @@ description: "Every conversation is a long-lived, streamable session."
 
 A **session** is one live conversation with an agent. Each session has its own memory and its own event stream.
 
-```
-createSession ─▶ send ─▶ stream events ─▶ session.completed
-                  │
-                  ├─▶ fork ─▶ (new session, shared history)
-                  ├─▶ abort ─▶ session.aborted
-                  └─▶ events?sinceSeq=N ─▶ replay
+```mermaid
+flowchart LR
+    create([createSession]) --> send([send])
+    send --> stream([stream events])
+    stream --> completed([session.completed]):::terminal
+
+    send -. fork .-> fork([new session, shared history])
+    send -. abort .-> aborted([session.aborted]):::terminal
+    send -. "events?sinceSeq=N" .-> replay([replay])
+
+    classDef terminal fill:#ff5d73,stroke:#e63e5c,color:#fff;
 ```
 
 ## Create one
