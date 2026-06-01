@@ -92,6 +92,27 @@ POST /session/<id>/revert      { "messageId": "..." }
 POST /session/<id>/regenerate  { "assistantMessageId": "..." }
 ```
 
+## Upload an attachment
+
+```http
+POST /session/<id>/upload
+Content-Type: multipart/form-data
+
+file=@data.csv
+```
+
+Stores the file and returns `{ url }` — an `r2://media/...` reference you can include in a later
+message or download.
+
+## Download an attachment / artifact
+
+```http
+GET /session/<id>/media?key=media/<uuid>-data.csv
+```
+
+Streams the stored object with its original `Content-Type`. `key` is the path from the `r2://` ref
+and is scoped to the `media/` prefix.
+
 ## Keys
 
 ```http

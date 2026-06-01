@@ -71,6 +71,28 @@ const { value: text } = await session
 const recipe = Recipe.parse(JSON.parse(text));
 ```
 
+## Attachments & artifacts
+
+Upload a file (CSV, image, PDF, …) and get back an `r2://media/...` reference. Download resolves
+that reference — or any artifact your agent produced — back to bytes.
+
+```ts
+const csv = "month,revenue\nJan,42000\nFeb,45500\n";
+
+// Store it. Returns { url: "r2://media/<uuid>-data.csv" }.
+const { url } = await session.upload({
+  filename: "data.csv",
+  mime: "text/csv",
+  bytes: new TextEncoder().encode(csv),
+});
+
+// Fetch it (or a chart the agent rendered) back out.
+const { bytes, mime } = await session.download(url);
+```
+
+`download()` accepts either a full `r2://media/...` ref or a bare `media/...` key. See the
+`examples/09-data-analyst` example for a full CSV → analysis → chart round-trip.
+
 ## Reconnect to a known session
 
 ```ts
