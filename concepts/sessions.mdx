@@ -22,11 +22,11 @@ flowchart LR
     send -- "abort" --> aborted
     send -- "events?sinceSeq=N" --> replay
 
-    classDef call fill:#ff5d73,stroke:#e63e5c,color:#fff;
+    classDef active fill:#ff5d73,stroke:#e63e5c,color:#fff;
     classDef terminal fill:#1f2937,stroke:#ff5d73,color:#ff8aa0;
     classDef result fill:#1f2937,stroke:#4b5563,color:#e5e7eb;
 
-    class create,send,stream call;
+    class create,send,stream active;
     class completed,aborted terminal;
     class fork,replay result;
 ```

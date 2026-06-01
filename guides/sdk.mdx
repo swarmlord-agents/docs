@@ -90,8 +90,7 @@ const { url } = await session.upload({
 const { bytes, mime } = await session.download(url);
 ```
 
-`download()` accepts either a full `r2://media/...` ref or a bare `media/...` key. See the
-`examples/09-data-analyst` example for a full CSV → analysis → chart round-trip.
+`download()` accepts either a full `r2://media/...` ref or a bare `media/...` key.
 
 ## Reconnect to a known session
 
