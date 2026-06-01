@@ -7,15 +7,22 @@ A **session** is one live conversation with an agent. Each session has its own m
 
 ```mermaid
 flowchart LR
-    create([createSession]) --> send([send])
-    send --> stream([stream events])
-    stream --> completed([session.completed]):::terminal
+    create(["createSession"]):::call --> send(["send"]):::call --> stream(["stream events"]):::call --> completed(["session.completed"]):::terminal
 
-    send -. fork .-> fork([new session, shared history])
-    send -. abort .-> aborted([session.aborted]):::terminal
-    send -. "events?sinceSeq=N" .-> replay([replay])
+    subgraph branches ["while a turn is in flight"]
+        direction TB
+        fork["new session<br/>shared history"]:::result
+        aborted["session.aborted"]:::terminal
+        replay["replay missed events"]:::result
+    end
 
-    classDef terminal fill:#ff5d73,stroke:#e63e5c,color:#fff;
+    send -- "fork" --> fork
+    send -- "abort" --> aborted
+    send -- "events?sinceSeq=N" --> replay
+
+    classDef call fill:#ff5d73,stroke:#e63e5c,color:#fff,font-weight:bold;
+    classDef terminal fill:#1f2937,stroke:#ff5d73,color:#ff8aa0;
+    classDef result fill:#1f2937,stroke:#4b5563,color:#e5e7eb;
 ```
 
 ## Create one
